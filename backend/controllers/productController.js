@@ -897,3 +897,57 @@ export async function Get_Product_Count(req, res) {
     });
   }
 }
+
+export async function Get_Low_Stock_Products(req, res) {
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        p.product_id,
+        p.name,
+        p.images,
+        ps.size_value,
+        ps.stock
+      FROM product_sizes ps
+      INNER JOIN products p ON p.product_id = ps.product_id
+      WHERE p.isActive = 'active'
+      ORDER BY ps.stock ASC
+      LIMIT 4
+      `
+    );
+
+    const products = rows.map((row) => {
+      let image = null;
+
+      if (row.images) {
+        try {
+          const imgs = JSON.parse(row.images);
+          if (Array.isArray(imgs) && imgs.length > 0) {
+            image = imgs[0];
+          } else if (typeof imgs === "string") {
+            image = imgs;
+          }
+        } catch (e) {
+          image = null;
+        }
+      }
+
+      return {
+        product_id: row.product_id,
+        name: row.name,
+        size_value: row.size_value,
+        stock: row.stock,
+        image,
+      };
+    });
+
+    return res.status(200).json(products);
+
+  } catch (error) {
+    console.error("Error fetching low stock products:", error);
+    return res.status(500).json({
+      message: "Error fetching low stock products",
+      error: error.message,
+    });
+  }
+}
