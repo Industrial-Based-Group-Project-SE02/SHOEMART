@@ -801,5 +801,56 @@ export async function Processing_Order_Count(req, res) {
     });
   }
 }
+export async function Recent_Four_Orders(req, res) {
+  try {
+    const user = req.user;
+
+    if (!user || !user.userid) {
+      return res.status(401).json({ 
+        message: "Unauthorized: user not found in token" 
+      });
+    }
+
+    const admin = await isAdmin(user.userid);
+    if (!admin) {
+      return res.status(403).json({ 
+        message: "Only admin can view recent orders" 
+      });
+    }
+
+    const [rows] = await pool.query(`
+      SELECT 
+        o.order_id,
+        o.total,
+        o.status,
+        o.order_date,
+        u.firstname,
+        u.lastname
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.userid
+      ORDER BY o.order_date DESC, o.order_id DESC
+      LIMIT 4
+    `);
+
+    const data = rows.map(r => ({
+      order_id: r.order_id,
+      firstname: r.firstname || null,
+      lastname: r.lastname || null,
+      total: r.total,
+      status: r.status,
+      order_date: r.order_date
+    }));
+
+    return res.status(200).json(data);
+
+  } catch (error) {
+    console.error("Error fetching recent 4 orders:", error);
+    return res.status(500).json({
+      message: "Error fetching recent orders",
+      error: error.message
+    });
+  }
+}
+
 
 
