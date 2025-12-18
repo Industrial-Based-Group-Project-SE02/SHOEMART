@@ -982,3 +982,44 @@ export async function Get_Newly_Added_Products(req, res) {
     });
   }
 }
+export async function Generate_AltNames(req, res) {
+  try {
+    const { name, main_category, color, country } = req.body;
+
+    // Validate required fields
+    if (!name || !main_category) {
+      return res.status(400).json({
+        message: "name and main_category are required"
+      });
+    }
+
+    // Validate name
+    if (!validateProductName(name)) {
+      return res.status(400).json({
+        message: "Product name must be 2-100 characters"
+      });
+    }
+
+    // Validate category
+    if (!ALLOWED_CATEGORIES.includes(main_category)) {
+      return res.status(400).json({
+        message: "Invalid main_category. Allowed: men, women, child"
+      });
+    }
+
+    const altNames = await generateAltNamesAI({
+      name: name.trim(),
+      main_category,
+      color: color ? color.trim() : null,
+      country: country ? country.trim() : null
+    });
+
+    return res.status(200).json({ altNames });
+
+  } catch (error) {
+    console.error("Generate altNames error:", error.message);
+    return res.status(500).json({
+      message: "Failed to generate altNames"
+    });
+  }
+}
