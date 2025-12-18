@@ -876,3 +876,24 @@ export async function Get_Top_Viewed_Products(req, res) {
     });
   }
 }
+
+export async function Get_Product_Count(req, res) {
+  try {
+    const [rows] = await pool.query(`
+      SELECT COUNT(*) AS total_products
+      FROM products
+      WHERE isActive = 'active'
+    `);
+
+    return res.status(200).json({
+      total_products: rows[0].total_products
+    });
+
+  } catch (error) {
+    console.error("Error fetching product count:", error);
+    return res.status(500).json({
+      message: "Error fetching product count",
+      error: error.message
+    });
+  }
+}

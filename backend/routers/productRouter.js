@@ -1,5 +1,5 @@
 import express from "express";
-import { Add_Product, Delete_Product, Get_Top_Viewed_Products, Increase_Product_Views, Update_Product_Details, View_Product_ById, View_Products } from "../controllers/productController.js";
+import { Add_Product, Delete_Product, Get_Product_Count, Get_Top_Viewed_Products, Increase_Product_Views, Update_Product_Details, View_Product_ById, View_Products } from "../controllers/productController.js";
 
 const productRouter = express.Router();
 
@@ -10,6 +10,7 @@ productRouter.put("/update_product/:id", Update_Product_Details);
 productRouter.delete("/delete_product/:id", Delete_Product);
 productRouter.post("/increase_views/:id", Increase_Product_Views);
 productRouter.get("/top_viewed", Get_Top_Viewed_Products);
+productRouter.get("/count", Get_Product_Count);
 
 
 export default productRouter;
