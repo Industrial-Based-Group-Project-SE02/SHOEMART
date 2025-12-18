@@ -1023,3 +1023,52 @@ export async function Generate_AltNames(req, res) {
     });
   }
 }
+export async function Generate_Description(req, res) {
+  try {
+    const { name, main_category, price, color, country } = req.body;
+
+    // Validate required fields
+    if (!name || !main_category || price === null || price === undefined) {
+      return res.status(400).json({
+        message: "name, main_category and price are required"
+      });
+    }
+
+    // Validate name
+    if (!validateProductName(name)) {
+      return res.status(400).json({
+        message: "Product name must be 2-100 characters"
+      });
+    }
+
+    // Validate category
+    if (!ALLOWED_CATEGORIES.includes(main_category)) {
+      return res.status(400).json({
+        message: "Invalid main_category. Allowed: men, women, child"
+      });
+    }
+
+    // Validate price
+    if (!validatePrice(price)) {
+      return res.status(400).json({
+        message: "Price must be a positive number"
+      });
+    }
+
+    const description = await generateDescriptionAI({
+      name: name.trim(),
+      main_category,
+      price: Number(price),
+      color: color ? color.trim() : null,
+      country: country ? country.trim() : null
+    });
+
+    return res.status(200).json({ description });
+
+  } catch (error) {
+    console.error("Generate description error:", error.message);
+    return res.status(500).json({
+      message: "Failed to generate description"
+    });
+  }
+}
