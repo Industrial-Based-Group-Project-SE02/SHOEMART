@@ -815,3 +815,37 @@ export async function Increase_Product_Views(req, res) {
   }
 }
 
+export async function Increase_Product_Views(req, res) {
+  try {
+    const { id } = req.params;
+
+    // Validate product ID
+    if (!validateProductId(id)) {
+      return res.status(400).json({ 
+        message: "Valid product_id is required (positive integer)" 
+      });
+    }
+
+    // Check product exists
+    const [existing] = await pool.query(
+      "SELECT product_id FROM products WHERE product_id = ? AND isActive = 'active'",
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    await pool.query(
+      "UPDATE products SET views = views + 1 WHERE product_id = ?",
+      [id]
+    );
+
+    return res.status(200).json({ message: "View counted" });
+
+  } catch (error) {
+    console.error("Error updating views:", error);
+    return res.status(500).json({ message: "Error", error: error.message });
+  }
+}
+
