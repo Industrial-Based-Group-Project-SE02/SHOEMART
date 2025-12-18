@@ -460,3 +460,67 @@ export async function View_Orders_ByUser(req, res) {
     return res.status(500).json({ message: "Error loading orders" });
   }
 }
+
+export async function Accept_Order(req, res) {
+  let connection;
+
+  try {
+    const user = req.user;
+
+    if (!user || !user.userid) {
+      return res.status(401).json({ message: "Unauthorized: user not found in token" });
+    }
+
+    const admin = await isAdmin(user.userid);
+    if (!admin) {
+      return res.status(403).json({ message: "Only admin can accept orders" });
+    }
+
+    // 👉 Safely parse order id
+    const rawId = req.params.order_id;
+    const orderId = Number(rawId);
+
+    if (!orderId || Number.isNaN(orderId)) {
+      console.error("Accept_Order invalid order_id:", rawId);
+      return res.status(400).json({ message: "Valid Order ID is required" });
+    }
+
+    connection = await pool.getConnection();
+
+    // 4) check order exists
+    const [rows] = await connection.query(
+      "SELECT status FROM orders WHERE order_id = ?",
+      [orderId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const currentStatus = rows[0].status;
+
+    if (currentStatus !== "processing") {
+      return res.status(400).json({
+        message: "Only orders in 'processing' status can be accepted"
+      });
+    }
+
+    await connection.query(
+      "UPDATE orders SET status = 'delivering' WHERE order_id = ?",
+      [orderId]
+    );
+
+    return res.status(200).json({
+      message: "Order accepted successfully. Status changed to delivering."
+    });
+
+  } catch (error) {
+    console.error("Error accepting order:", error);
+    return res.status(500).json({
+      message: "Error accepting order",
+      error: error.message
+    });
+  } finally {
+    if (connection) connection.release();
+  }
+}
