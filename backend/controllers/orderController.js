@@ -760,3 +760,25 @@ export async function Cancel_Order(req, res) {
     if (connection) connection.release();
   }
 }
+
+export async function Total_Order_Count(req, res) {
+  try {
+    const [rows] = await pool.query(`
+      SELECT COUNT(*) AS total_orders
+      FROM orders
+    `);
+
+    return res.status(200).json({
+      total_orders: rows[0].total_orders
+    });
+
+  } catch (error) {
+    console.error("Error fetching total order count:", error);
+    return res.status(500).json({
+      message: "Error fetching total order count",
+      error: error.message
+    });
+  }
+}
+
+
