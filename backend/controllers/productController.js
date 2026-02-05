@@ -815,3 +815,260 @@ export async function Increase_Product_Views(req, res) {
   }
 }
 
+export async function Increase_Product_Views(req, res) {
+  try {
+    const { id } = req.params;
+
+    // Validate product ID
+    if (!validateProductId(id)) {
+      return res.status(400).json({ 
+        message: "Valid product_id is required (positive integer)" 
+      });
+    }
+
+    // Check product exists
+    const [existing] = await pool.query(
+      "SELECT product_id FROM products WHERE product_id = ? AND isActive = 'active'",
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    await pool.query(
+      "UPDATE products SET views = views + 1 WHERE product_id = ?",
+      [id]
+    );
+
+    return res.status(200).json({ message: "View counted" });
+
+  } catch (error) {
+    console.error("Error updating views:", error);
+    return res.status(500).json({ message: "Error", error: error.message });
+  }
+}
+
+export async function Get_Top_Viewed_Products(req, res) {
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT product_id, name, price, images, views 
+      FROM products
+      WHERE isActive = 'active'
+      ORDER BY views DESC
+      LIMIT 8
+      `
+    );
+
+    const products = rows.map(p => ({
+      ...p,
+      images: p.images ? JSON.parse(p.images) : []
+    }));
+
+    return res.status(200).json(products);
+
+  } catch (error) {
+    console.error("Error fetching top viewed products:", error);
+    return res.status(500).json({
+      message: "Failed to load top viewed products",
+      error: error.message
+    });
+  }
+}
+
+export async function Get_Product_Count(req, res) {
+  try {
+    const [rows] = await pool.query(`
+      SELECT COUNT(*) AS total_products
+      FROM products
+      WHERE isActive = 'active'
+    `);
+
+    return res.status(200).json({
+      total_products: rows[0].total_products
+    });
+
+  } catch (error) {
+    console.error("Error fetching product count:", error);
+    return res.status(500).json({
+      message: "Error fetching product count",
+      error: error.message
+    });
+  }
+}
+
+export async function Get_Low_Stock_Products(req, res) {
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        p.product_id,
+        p.name,
+        p.images,
+        ps.size_value,
+        ps.stock
+      FROM product_sizes ps
+      INNER JOIN products p ON p.product_id = ps.product_id
+      WHERE p.isActive = 'active'
+      ORDER BY ps.stock ASC
+      LIMIT 4
+      `
+    );
+
+    const products = rows.map((row) => {
+      let image = null;
+
+      if (row.images) {
+        try {
+          const imgs = JSON.parse(row.images);
+          if (Array.isArray(imgs) && imgs.length > 0) {
+            image = imgs[0];
+          } else if (typeof imgs === "string") {
+            image = imgs;
+          }
+        } catch (e) {
+          image = null;
+        }
+      }
+
+      return {
+        product_id: row.product_id,
+        name: row.name,
+        size_value: row.size_value,
+        stock: row.stock,
+        image,
+      };
+    });
+
+    return res.status(200).json(products);
+
+  } catch (error) {
+    console.error("Error fetching low stock products:", error);
+    return res.status(500).json({
+      message: "Error fetching low stock products",
+      error: error.message,
+    });
+  }
+}
+export async function Get_Newly_Added_Products(req, res) {
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        product_id,
+        name,
+        price,
+        images,
+        main_category,
+        created_at
+      FROM products
+      WHERE isActive = 'active'
+      ORDER BY created_at DESC
+      LIMIT 20
+    `);
+
+    const products = rows.map(p => ({
+      ...p,
+      images: p.images ? JSON.parse(p.images) : []
+    }));
+
+    return res.status(200).json(products);
+
+  } catch (error) {
+    console.error("Error fetching newly added products:", error);
+    return res.status(500).json({
+      message: "Failed to load newly added products",
+      error: error.message
+    });
+  }
+}
+export async function Generate_AltNames(req, res) {
+  try {
+    const { name, main_category, color, country } = req.body;
+
+    // Validate required fields
+    if (!name || !main_category) {
+      return res.status(400).json({
+        message: "name and main_category are required"
+      });
+    }
+
+    // Validate name
+    if (!validateProductName(name)) {
+      return res.status(400).json({
+        message: "Product name must be 2-100 characters"
+      });
+    }
+
+    // Validate category
+    if (!ALLOWED_CATEGORIES.includes(main_category)) {
+      return res.status(400).json({
+        message: "Invalid main_category. Allowed: men, women, child"
+      });
+    }
+
+    const altNames = await generateAltNamesAI({
+      name: name.trim(),
+      main_category,
+      color: color ? color.trim() : null,
+      country: country ? country.trim() : null
+    });
+
+    return res.status(200).json({ altNames });
+
+  } catch (error) {
+    console.error("Generate altNames error:", error.message);
+    return res.status(500).json({
+      message: "Failed to generate altNames"
+    });
+  }
+}
+export async function Generate_Description(req, res) {
+  try {
+    const { name, main_category, price, color, country } = req.body;
+
+    // Validate required fields
+    if (!name || !main_category || price === null || price === undefined) {
+      return res.status(400).json({
+        message: "name, main_category and price are required"
+      });
+    }
+
+    // Validate name
+    if (!validateProductName(name)) {
+      return res.status(400).json({
+        message: "Product name must be 2-100 characters"
+      });
+    }
+
+    // Validate category
+    if (!ALLOWED_CATEGORIES.includes(main_category)) {
+      return res.status(400).json({
+        message: "Invalid main_category. Allowed: men, women, child"
+      });
+    }
+
+    // Validate price
+    if (!validatePrice(price)) {
+      return res.status(400).json({
+        message: "Price must be a positive number"
+      });
+    }
+
+    const description = await generateDescriptionAI({
+      name: name.trim(),
+      main_category,
+      price: Number(price),
+      color: color ? color.trim() : null,
+      country: country ? country.trim() : null
+    });
+
+    return res.status(200).json({ description });
+
+  } catch (error) {
+    console.error("Generate description error:", error.message);
+    return res.status(500).json({
+      message: "Failed to generate description"
+    });
+  }
+}

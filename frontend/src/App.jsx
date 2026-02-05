@@ -1,10 +1,20 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Home from './pages/home';
-import AdminPage from './admin/adminpage';
+import Products from './pages/products';
+import About from './pages/about';
+import Contact from './pages/contact';
+
 import Login from './auth/loging';
+import { Toaster } from 'react-hot-toast';
 import Register from './auth/rejister';
+import AdminPage from './admin/adminpage';
+import ProductOverview from './pages/productOverview';
+import CartPage from './pages/cartPage';
 import ClientPage from './clients/clientPage';
+import Checkout from './pages/checkout';
+import DeliveryPage from './delivery/deliverypage';
+import NewProducts from './pages/newproducts';
 
 
 
@@ -22,12 +32,22 @@ function App() {
         
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/client-page/*" element={<ClientPagE />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login  />} />
           <Route path="/register" element={<Register  />} />
           <Route path="/admin-page/*" element={<AdminPage />} />
-          
+          <Route path="/overview/:id" element={<ProductOverview />} /> 
+          <Route path="/cart" element={<CartPage/>} /> 
+          <Route path="/checkout" element={<Checkout/>} /> 
+           <Route path="/new-arrival" element={<NewProducts />} />
        
+
+
+
+         <Route path="/client-page/*" element={<ClientPage />} />
+           <Route path="/deliver-page/*" element={<DeliveryPage />} />
           
         </Routes>
       </Router>
