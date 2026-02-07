@@ -1,0 +1,46 @@
+﻿<Window x:Class="ShoeRetailPOS.Views.PaymentWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Payment"
+        Height="420"
+        Width="400"
+        WindowStartupLocation="CenterOwner">
+
+    <StackPanel Margin="20">
+
+        <TextBlock Text="Payment"
+                   FontSize="22"
+                   FontWeight="Bold"
+                   Margin="0,0,0,20"/>
+
+        <!-- Customer Name -->
+        <TextBlock Text="Customer Name (optional)"/>
+        <TextBox x:Name="NameBox" Height="32"/>
+
+        <!-- Total -->
+        <TextBlock Text="Total Amount" Margin="0,15,0,0"/>
+        <TextBox Text="{Binding Total, StringFormat=Rs. {0:N2}, Mode=OneWay}"
+         IsReadOnly="True"
+         Height="32"/>
+
+
+        <!-- Cash Given -->
+        <TextBlock Text="Cash Given" Margin="0,15,0,0"/>
+        <TextBox x:Name="CashBox"
+                 Height="32"
+                 TextChanged="CashBox_TextChanged"/>
+
+        <!-- Balance -->
+        <TextBlock Text="Balance / Change" Margin="0,15,0,0"/>
+        <TextBox Text="{Binding Balance, StringFormat=Rs. {0:N2}, Mode=OneWay}"
+         IsReadOnly="True"
+         Height="32"/>
+
+
+        <!-- Confirm -->
+        <Button Content="Confirm Payment"
+                Height="45"
+                Margin="0,25,0,0"
+                Click="Confirm_Click"/>
+    </StackPanel>
+</Window>
